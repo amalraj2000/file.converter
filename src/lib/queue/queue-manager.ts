@@ -1,5 +1,5 @@
 import { assessBatch, assessFile } from "../guardrails";
-import { canConvert, detectFormat, engineFor, outputName, type Engine } from "../formats";
+import { COMPRESS_TARGET, canConvert, detectFormat, engineFor, outputName, type Engine } from "../formats";
 import {
   DEFAULT_SETTINGS,
   type ConversionSettings,
@@ -9,7 +9,8 @@ import {
 } from "./types";
 
 /** ffmpeg.wasm is a single shared instance → strictly one media job at a time. */
-const CONCURRENCY: Record<Engine, number> = { image: 3, document: 2, media: 1 };
+/** compress may call ffmpeg internally, so it is serialized too. */
+const CONCURRENCY: Record<Engine, number> = { image: 3, document: 2, media: 1, compress: 1 };
 
 type Converters = Record<Engine, Converter>;
 
@@ -25,7 +26,7 @@ const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 export class ConversionQueue {
   private items: QueueItem[] = [];
   private settings: ConversionSettings = DEFAULT_SETTINGS;
-  private running: Record<Engine, number> = { image: 0, media: 0, document: 0 };
+  private running: Record<Engine, number> = { image: 0, media: 0, document: 0, compress: 0 };
   private controllers = new Map<string, AbortController>();
   private listeners = new Set<() => void>();
   private snapshot: QueueSnapshot;
@@ -44,15 +45,19 @@ export class ConversionQueue {
   // ---- public API ----
   addFiles(files: File[], preferredTarget?: string | null) {
     const added = files.map((file): QueueItem => {
+      const compress = preferredTarget === COMPRESS_TARGET;
       const source = detectFormat(file);
-      const guard = assessFile(file.size, source?.category ?? null);
-      const target = source && preferredTarget && canConvert(source.id, preferredTarget) ? preferredTarget : null;
+      // Compress accepts ANY file type; unknown types are guarded like generic documents.
+      const guard = assessFile(file.size, compress ? (source?.category ?? "document") : (source?.category ?? null));
+      const target = compress
+        ? COMPRESS_TARGET
+        : source && preferredTarget && canConvert(source.id, preferredTarget) ? preferredTarget : null;
       return {
         id: newId(),
         file,
         source,
         targetId: target,
-        engine: source && target ? engineFor(source.id, target) : null,
+        engine: compress ? "compress" : source && target ? engineFor(source.id, target) : null,
         status: guard.level === "block" ? "error" : "idle",
         progress: 0,
         guard,
@@ -65,6 +70,7 @@ export class ConversionQueue {
 
   setTarget(id: string, targetId: string) {
     this.patch(id, (it) => {
+      if (it.engine === "compress") return it; // compress items have a fixed target
       if (!it.source || !canConvert(it.source.id, targetId) || it.status === "converting") return it;
       return {
         ...it,
@@ -89,6 +95,7 @@ export class ConversionQueue {
       image: { ...this.settings.image, ...patch.image },
       media: { ...this.settings.media, ...patch.media },
       document: { ...this.settings.document, ...patch.document },
+      compress: { ...this.settings.compress, ...patch.compress },
     };
     this.emit();
   }
@@ -157,7 +164,7 @@ export class ConversionQueue {
 
     try {
       const convert = this.getConverters()[engine];
-      const blob = await convert(item.file, item.targetId!, {
+      const result = await convert(item.file, item.targetId!, {
         settings: this.settings,
         signal: controller.signal,
         onProgress: (p) => {
@@ -166,11 +173,13 @@ export class ConversionQueue {
         },
       });
       if (controller.signal.aborted) throw new DOMException("Cancelled", "AbortError");
+      const out = result instanceof Blob ? { blob: result } : result;
       this.patch(item.id, (it) => ({
         ...it,
         status: "done",
         progress: 100,
-        output: { blob, name: outputName(it.file.name, it.targetId!), size: blob.size },
+        note: out.note,
+        output: { blob: out.blob, name: out.name ?? outputName(it.file.name, it.targetId!), size: out.blob.size },
       }));
     } catch (e) {
       const cancelled = controller.signal.aborted;

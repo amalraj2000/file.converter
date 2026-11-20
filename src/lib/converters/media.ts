@@ -59,7 +59,8 @@ function resetFFmpeg() {
 const AUDIO_ONLY = new Set(["mp3", "wav", "aac", "ogg"]);
 
 export function buildArgs(target: string, input: string, output: string, s: ConversionSettings["media"]): string[] {
-  const vf = s.scaleWidth ? ["-vf", `scale=${s.scaleWidth}:-2`] : [];
+  // min(W, iw): only ever shrink, never upscale small videos
+  const vf = s.scaleWidth ? ["-vf", `scale=min(${s.scaleWidth}\\,iw):-2`] : [];
   const ab = `${s.audioBitrateKbps}k`;
   const crf = String(s.videoCrf);
   // libvorbis rejects fixed bitrates that don't suit the input sample rate → use quality mode.
@@ -70,11 +71,11 @@ export function buildArgs(target: string, input: string, output: string, s: Conv
     case "mov":
       return ["-i", input, ...vf, "-c:v", "libx264", "-preset", "veryfast", "-crf", crf, "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", ab, "-f", "mov", output];
     case "webm": // VP8 + Vorbis: far faster than VP9 in wasm
-      return ["-i", input, ...vf, "-c:v", "libvpx", "-b:v", "1500k", "-crf", String(Math.min(63, s.videoCrf)), "-c:a", "libvorbis", "-q:a", vq, output];
+      return ["-i", input, ...vf, "-c:v", "libvpx", "-pix_fmt", "yuv420p", "-b:v", "1500k", "-crf", String(Math.min(63, s.videoCrf)), "-c:a", "libvorbis", "-q:a", vq, output];
     case "avi":
-      return ["-i", input, ...vf, "-c:v", "mpeg4", "-q:v", "5", "-c:a", "libmp3lame", "-b:a", ab, output];
+      return ["-i", input, ...vf, "-c:v", "mpeg4", "-pix_fmt", "yuv420p", "-q:v", "5", "-c:a", "libmp3lame", "-b:a", ab, output];
     case "gif":
-      return ["-i", input, "-an", "-vf", `fps=${s.gifFps},scale=${s.gifWidth}:-1:flags=lanczos`, "-loop", "0", output];
+      return ["-i", input, "-an", "-vf", `fps=${s.gifFps},scale=min(${s.gifWidth}\\,iw):-1:flags=lanczos`, "-loop", "0", output];
     case "mp3":
       return ["-i", input, "-vn", "-c:a", "libmp3lame", "-b:a", ab, output];
     case "wav":

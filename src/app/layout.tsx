@@ -1,17 +1,24 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import type { Metadata, Viewport } from "next";
+import { Footer } from "@/components/Footer";
+import { Header } from "@/components/Header";
 import { THEME_INIT_SCRIPT } from "@/lib/theme-script";
+import { SITE_NAME, SITE_TAGLINE, siteUrl } from "@/lib/site";
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: [{ media: "(prefers-color-scheme: light)", color: "#ffffff" }, { media: "(prefers-color-scheme: dark)", color: "#0e1015" }] };
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: { default: "LocalConvert — private file converter that runs in your browser", template: "%s · LocalConvert" },
-  description:
-    "Convert images, video, audio, documents and spreadsheets without uploading anything. Files never leave your device.",
+  applicationName: SITE_NAME,
+  title: { default: `${SITE_NAME} — ${SITE_TAGLINE}`, template: `%s · ${SITE_NAME}` },
+  description: "Convert and compress images, video, audio, PDF, Word and Excel files for free. Everything runs in your browser — files are never uploaded.",
+  keywords: ["file converter", "online file converter", "private file converter", "image converter", "video converter", "audio converter", "pdf converter", "compress files", "reduce file size"],
+  alternates: { canonical: "/" },
+  openGraph: { type: "website", siteName: SITE_NAME, locale: "en_US" },
+  twitter: { card: "summary_large_image" },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
+  // Set NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION to the token from Google Search Console (HTML tag method).
+  verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } : undefined,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -20,19 +27,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className="min-h-screen">
-        <header className="border-b">
-          <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-            <Link href="/" className="font-semibold tracking-tight">LocalConvert</Link>
-            <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-                <ShieldCheck className="h-3.5 w-3.5 text-success" aria-hidden /> Files never leave your device
-              </span>
-              <ThemeToggle />
-            </div>
-          </div>
-        </header>
-        <main className="mx-auto max-w-4xl px-4 py-8">{children}</main>
+      <body className="flex min-h-screen flex-col">
+        <Header />
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:py-10">{children}</main>
+        <Footer />
       </body>
     </html>
   );

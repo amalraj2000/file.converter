@@ -23,12 +23,16 @@ export interface ConversionSettings {
     marginMm: number;
     fontSize: number;
   };
+  compress: {
+    level: "light" | "balanced" | "strong";
+  };
 }
 
 export const DEFAULT_SETTINGS: ConversionSettings = {
   image: { quality: 0.85, maxWidth: null, maxHeight: null },
   media: { audioBitrateKbps: 192, videoCrf: 23, scaleWidth: null, gifFps: 12, gifWidth: 480 },
   document: { pageSize: "a4", orientation: "portrait", marginMm: 15, fontSize: 11 },
+  compress: { level: "balanced" },
 };
 
 export interface ConvertContext {
@@ -38,8 +42,16 @@ export interface ConvertContext {
   signal: AbortSignal;
 }
 
-/** Every engine (image / media / document) exposes this single shape. */
-export type Converter = (file: File, targetId: string, ctx: ConvertContext) => Promise<Blob>;
+export interface ConvertResult {
+  blob: Blob;
+  /** Output filename; defaults to the source name with the target extension. */
+  name?: string;
+  /** Short message shown under the row (e.g. "already optimized"). */
+  note?: string;
+}
+
+/** Every engine (image / media / document / compress) exposes this single shape. */
+export type Converter = (file: File, targetId: string, ctx: ConvertContext) => Promise<Blob | ConvertResult>;
 
 export type JobStatus = "idle" | "queued" | "converting" | "done" | "error" | "cancelled";
 
@@ -54,6 +66,7 @@ export interface QueueItem {
   progress: number;
   guard: Guard;
   error?: string;
+  note?: string;
   output?: { blob: Blob; name: string; size: number };
 }
 

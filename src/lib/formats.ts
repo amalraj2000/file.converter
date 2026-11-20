@@ -1,5 +1,8 @@
 export type Category = "image" | "video" | "audio" | "document" | "spreadsheet" | "text";
-export type Engine = "image" | "media" | "document";
+export type Engine = "image" | "media" | "document" | "compress";
+
+/** Pseudo-target: "make this file smaller" (valid for every file type). */
+export const COMPRESS_TARGET = "compress";
 
 export interface FormatDef {
   id: string;

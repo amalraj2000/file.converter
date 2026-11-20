@@ -24,7 +24,7 @@ const int = (v: string, fallback: number) => { const n = parseInt(v, 10); return
 /** Slide-over settings panel built on native <dialog> (focus trap + Esc + backdrop for free). */
 export function SettingsDrawer({ settings, queue }: { settings: ConversionSettings; queue: ConversionQueue }) {
   const ref = useRef<HTMLDialogElement>(null);
-  const { image: im, media: md, document: doc } = settings;
+  const { image: im, media: md, document: doc, compress: cp } = settings;
 
   return (
     <>
@@ -35,7 +35,7 @@ export function SettingsDrawer({ settings, queue }: { settings: ConversionSettin
         ref={ref}
         aria-labelledby="settings-title"
         onClick={(e) => e.target === ref.current && ref.current.close()}
-        className="m-0 ml-auto h-full max-h-none w-full max-w-sm bg-background p-0 text-foreground shadow-xl backdrop:bg-black/50"
+        className="m-0 ml-auto h-dvh max-h-none w-full max-w-sm bg-background p-0 text-foreground shadow-xl backdrop:bg-black/50"
       >
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b p-4">
@@ -44,6 +44,17 @@ export function SettingsDrawer({ settings, queue }: { settings: ConversionSettin
           </div>
 
           <div className="flex-1 space-y-6 overflow-y-auto p-4">
+            <section className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">File size reducer</h3>
+              <Row label="Compression level">
+                <select className={field} value={cp.level} onChange={(e) => queue.updateSettings({ compress: { level: e.target.value as "light" | "balanced" | "strong" } })}>
+                  <option value="light">Light — best quality</option>
+                  <option value="balanced">Balanced</option>
+                  <option value="strong">Strong — smallest file</option>
+                </select>
+              </Row>
+            </section>
+
             <section className="space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Images</h3>
               <Row label="Quality" hint={`${Math.round(im.quality * 100)}%  (JPG / WEBP / AVIF)`}>
