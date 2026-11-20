@@ -1,4 +1,7 @@
 export const SITE_NAME = "LocalConvert";
+export const COMPANY_NAME = "softDestiny";
+export const COMPANY_TAGLINE = "Innovative Software Solutions";
+export const COMPANY_URL = "https://softdestiny.vercel.app/";
 export const SITE_TAGLINE = "Free private file converter & compressor";
 
 /**

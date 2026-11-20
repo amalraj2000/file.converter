@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Lock } from "lucide-react";
+import { COMPANY_NAME, COMPANY_TAGLINE, COMPANY_URL } from "@/lib/site";
 
 const COLUMNS: { title: string; links: string[] }[] = [
   { title: "Images", links: ["jpg-to-png", "png-to-jpg", "png-to-webp", "webp-to-png", "jpg-to-pdf"] },
@@ -57,7 +58,13 @@ export function Footer() {
           <p className="flex items-center gap-1.5">
             <Lock className="h-3.5 w-3.5 text-success" aria-hidden /> Your files are processed on your device and never uploaded.
           </p>
-          <p>© {new Date().getFullYear()} LocalConvert</p>
+          <p>
+            © {new Date().getFullYear()} LocalConvert · A product of{" "}
+            <a href={COMPANY_URL} target="_blank" rel="noopener" className="font-medium text-foreground hover:underline" title={COMPANY_TAGLINE}>
+              {COMPANY_NAME}
+            </a>{" "}
+            — {COMPANY_TAGLINE}
+          </p>
         </div>
       </div>
     </footer>

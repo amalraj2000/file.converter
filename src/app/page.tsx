@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Converter } from "@/components/Converter";
 import { JsonLd } from "@/components/JsonLd";
-import { SITE_NAME, absoluteUrl } from "@/lib/site";
+import { COMPANY_NAME, COMPANY_TAGLINE, COMPANY_URL, SITE_NAME, absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: { absolute: "LocalConvert — Free Private File Converter & Compressor (No Upload)" },
@@ -39,6 +39,7 @@ export default function Home() {
       operatingSystem: "Any (runs in the browser)",
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       description: "Free private file converter and compressor that runs in your browser.",
+      creator: { "@type": "Organization", name: COMPANY_NAME, url: COMPANY_URL },
     },
     {
       "@context": "https://schema.org",
@@ -83,6 +84,18 @@ export default function Home() {
             <p className="mt-2 text-sm text-muted-foreground">{f.a}</p>
           </details>
         ))}
+      </section>
+
+      <section className="rounded-lg border bg-muted/30 p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">A product of {COMPANY_NAME}</p>
+        <h2 className="mt-1 text-lg font-semibold">{COMPANY_TAGLINE}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          LocalConvert is built by {COMPANY_NAME}, a web development company in Kerala, India that creates affordable, fast-to-deploy
+          websites, e-commerce stores and custom web apps.
+        </p>
+        <a href={COMPANY_URL} target="_blank" rel="noopener" className="mt-3 inline-block text-sm font-medium text-primary hover:underline">
+          Visit {COMPANY_NAME} →
+        </a>
       </section>
 
       <JsonLd data={jsonLd} />
